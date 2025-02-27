@@ -1,7 +1,13 @@
 import data
 import build_data
 import unittest
-
+from hw3 import (
+    population_total, filter_by_state, population_by_education, population_by_ethnicity,
+    population_below_poverty_level, percent_by_education, percent_by_ethnicity,
+    percent_below_poverty_level, education_greater_than, education_less_than,
+    ethnicity_greater_than, ethnicity_less_than, below_poverty_level_greater_than,
+    below_poverty_level_less_than
+)
 
 # These two values are defined to support testing below. The
 # data within these structures should not be modified. Doing
@@ -178,30 +184,99 @@ reduced_data = [
 class TestCases(unittest.TestCase):
     pass
 
-    # Part 1
-    # test population_total
+    # Part 1: Test total population calculation
+    def test_population_total(self):
+        expected_population = sum(d.population['2014 Population'] for d in reduced_data)
+        self.assertEqual(population_total(reduced_data), expected_population)
+        self.assertEqual(population_total([]), 0)
 
-    # Part 2
-    # test filter_by_state
+    # Part 2: Test filtering data by state
+    def test_filter_by_state(self):
+        al_counties = [d for d in reduced_data if d.state == 'AL']
+        self.assertEqual(filter_by_state(reduced_data, 'AL'), al_counties)
+        self.assertEqual(filter_by_state(reduced_data, 'ZZ'), [])
 
-    # Part 3
-    # test population_by_education
-    # test population_by_ethnicity
-    # test population_below_poverty_level
+    # Part 3: Test population by education level
+    def test_population_by_education(self):
+        key = "Bachelor's Degree or Higher"
+        expected_population = sum(
+            (d.education.get(key, 0) / 100) * d.population['2014 Population'] for d in reduced_data)
+        self.assertEqual(population_by_education(reduced_data, key), expected_population)
+        self.assertEqual(population_by_education(reduced_data, "Nonexistent Key"), 0)
 
-    # Part 4
-    # test percent_by_education
-    # test percent_by_ethnicity
-    # test percent_below_poverty_level
+    # Part 3: Test population by ethnicity
+    def test_population_by_ethnicity(self):
+        key = "Hispanic or Latino"
+        expected_population = sum(
+            (d.ethnicities.get(key, 0) / 100) * d.population['2014 Population'] for d in reduced_data)
+        self.assertEqual(population_by_ethnicity(reduced_data, key), expected_population)
+        self.assertEqual(population_by_ethnicity(reduced_data, "Nonexistent Key"), 0)
 
-    # Part 5
-    # test education_greater_than
-    # test education_less_than
-    # test ethnicity_greater_than
-    # test ethnicity_less_than
-    # test below_poverty_level_greater_than
-    # test below_poverty_level_less_than
+    # Part 3: Test total population below poverty level
+    def test_population_below_poverty_level(self):
+        expected_population = sum(
+            (d.income["Persons Below Poverty Level"] / 100) * d.population['2014 Population'] for d in reduced_data)
+        self.assertEqual(population_below_poverty_level(reduced_data), expected_population)
 
+    # Part 4: Test percentage calculation by education level
+    def test_percent_by_education(self):
+        key = "Bachelor's Degree or Higher"
+        self.assertAlmostEqual(percent_by_education(reduced_data, key),
+                               population_by_education(reduced_data, key) / population_total(reduced_data) * 100,
+                               places=2)
+
+    # Part 4: Test percentage calculation by ethnicity
+    def test_percent_by_ethnicity(self):
+        key = "Hispanic or Latino"
+        self.assertAlmostEqual(percent_by_ethnicity(reduced_data, key),
+                               population_by_ethnicity(reduced_data, key) / population_total(reduced_data) * 100,
+                               places=2)
+
+    # Part 4: Test percentage below poverty level
+    def test_percent_below_poverty_level(self):
+        self.assertAlmostEqual(percent_below_poverty_level(reduced_data),
+                               population_below_poverty_level(reduced_data) / population_total(reduced_data) * 100,
+                               places=2)
+
+    # Part 5: Test filtering data by education level threshold (greater than)
+    def test_education_greater_than(self):
+        threshold = 15
+        key = "Bachelor's Degree or Higher"
+        self.assertEqual(education_greater_than(reduced_data, key, threshold),
+                         [d for d in reduced_data if d.education.get(key, 0) > threshold])
+
+    # Part 5: Test filtering data by education level threshold (less than)
+    def test_education_less_than(self):
+        threshold = 25
+        key = "Bachelor's Degree or Higher"
+        self.assertEqual(education_less_than(reduced_data, key, threshold),
+                         [d for d in reduced_data if d.education.get(key, 0) < threshold])
+
+    # Part 5: Test filtering data by ethnicity threshold (greater than)
+    def test_ethnicity_greater_than(self):
+        key = "Hispanic or Latino"
+        threshold = 5
+        self.assertEqual(ethnicity_greater_than(reduced_data, key, threshold),
+                         [d for d in reduced_data if d.ethnicities.get(key, 0) > threshold])
+
+    # Part 5: Test filtering data by ethnicity threshold (less than)
+    def test_ethnicity_less_than(self):
+        key = "Hispanic or Latino"
+        threshold = 5
+        self.assertEqual(ethnicity_less_than(reduced_data, key, threshold),
+                         [d for d in reduced_data if d.ethnicities.get(key, 0) < threshold])
+
+    # Part 5: Test filtering data by poverty level threshold (greater than)
+    def test_below_poverty_level_greater_than(self):
+        threshold = 15
+        self.assertEqual(below_poverty_level_greater_than(reduced_data, threshold),
+                         [d for d in reduced_data if d.income['Persons Below Poverty Level'] > threshold])
+
+    # Part 5: Test filtering data by poverty level threshold (less than)
+    def test_below_poverty_level_less_than(self):
+        threshold = 15
+        self.assertEqual(below_poverty_level_less_than(reduced_data, threshold),
+                         [d for d in reduced_data if d.income['Persons Below Poverty Level'] < threshold])
 
 
 if __name__ == '__main__':
